@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 class StudentBase(BaseModel):
    rollno:int=Field(...,description="roll no")
    name:str=Field(...,description="student name",max_length=50)
-   age:int=Field(...,description="student age",gt=0)
+   fees:int=Field(...,description="student age",gt=0)
 
 
 class StudentCreate(StudentBase):
