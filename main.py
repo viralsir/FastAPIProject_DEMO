@@ -1,10 +1,13 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-from routers import Student_Router
+from routers import Student_Router, Author_Router, Book_Router
 
 app = FastAPI(title="first api")
 
 app.include_router(Student_Router.router)
+
+app.include_router(Author_Router.author_router)
+app.include_router(Book_Router.bookrouter)
 
 # http://localhost:8000/
 # @app.get("/")
