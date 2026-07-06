@@ -12,7 +12,7 @@ from schemas.book_schema import BookResponse
 bookrouter = APIRouter(prefix="/book",tags=["Book"])
 
 #create a new book
-@bookrouter.post("/",response_model=BookResponse)
+@bookrouter.post("/")
 async def create_book(book:dict,db:AsyncSession=Depends(get_db)):
     new_book=Book(**book)
     db.add(new_book)
