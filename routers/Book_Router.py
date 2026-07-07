@@ -5,7 +5,8 @@ from starlette import status
 from sqlalchemy import select
 
 from database import get_db
-from model import Author, Book
+from model import Author, Book, User
+from routers.User_Router import get_current_user
 from schemas.book_schema import BookResponse
 
 #http://localhost/books
@@ -23,15 +24,16 @@ async def create_book(book:dict,db:AsyncSession=Depends(get_db)):
 
 #get all the books
 @bookrouter.get("/",response_model=list[BookResponse],status_code=status.HTTP_200_OK)
-async def get_all_books(db:AsyncSession=Depends(get_db)):
+async def get_all_books(current_user:User = Depends(get_current_user),db:AsyncSession=Depends(get_db)):
     result =  await db.execute(select(Book).options(selectinload(Book.authorinfo)))
     bookslist=result.scalars().all()
     return bookslist
 
 # get book by id
 @bookrouter.get("/{id}",response_model=BookResponse,status_code=status.HTTP_200_OK)
-async def get_book_by_id(id:int,db:AsyncSession=Depends(get_db)):
-    result = await db.execute(select(Book).where(Book.id == id))
+async def get_book_by_id(id:int,db:AsyncSession=Depends(get_db),current_user:User = Depends(get_current_user)):
+
+    result = await db.execute(select(Book).options(selectinload(Book.authorinfo)).where(Book.id == id))
     book = result.scalars().first()
     if book is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="Book not found")
@@ -39,7 +41,9 @@ async def get_book_by_id(id:int,db:AsyncSession=Depends(get_db)):
 
 # update book detail by id
 @bookrouter.put("/{id}",response_model=BookResponse)
-async def update_book(id:int,book:dict,db:AsyncSession=Depends(get_db)):
+async def update_book(id:int,book:dict,db:AsyncSession=Depends(get_db)
+                      ):
+
     sbook = db.get(Book,id)
     if sbook is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="Book not found")
