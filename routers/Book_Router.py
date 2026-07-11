@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from starlette import status
 from sqlalchemy import select
 
 from database import get_db
+from exception import BookNotFoundException
 from model import Author, Book, User
 from routers.User_Router import get_current_user
 from schemas.book_schema import BookResponse
@@ -31,12 +32,13 @@ async def get_all_books(current_user:User = Depends(get_current_user),db:AsyncSe
 
 # get book by id
 @bookrouter.get("/{id}",response_model=BookResponse,status_code=status.HTTP_200_OK)
-async def get_book_by_id(id:int,db:AsyncSession=Depends(get_db),current_user:User = Depends(get_current_user)):
+async def get_book_by_id(id:int,db:AsyncSession=Depends(get_db)):
 
     result = await db.execute(select(Book).options(selectinload(Book.authorinfo)).where(Book.id == id))
     book = result.scalars().first()
     if book is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="Book not found")
+       # raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="Book not found")
+       raise BookNotFoundException(id)
     return book
 
 # update book detail by id
@@ -63,5 +65,21 @@ async def delete_book(id:int,db:AsyncSession=Depends(get_db)):
     await db.delete(sbook)
     await db.commit()
     return {"message":"Book deleted successfully"}
+
+ALLOWED_TYPES={"image/jpeg","image/png"}
+MAX_SIZE_BYTES=5*1024 * 1024  # 5 MB
+
+@bookrouter.post("/{book_id}/cover")
+async def create_cover(book_id:int,file:UploadFile=File(...)):
+    if file.content_type not in ALLOWED_TYPES:
+        raise HTTPException(status_code=422,detail=f"Unsupported file type : {file.content_type} Upload only JPEG or PNG")
+    content = await file.read()
+    if len(content) > MAX_SIZE_BYTES:
+        raise HTTPException(status_code=422,detail="File too large Max Size is 5 MB")
+
+    save_path=f"uploads/book_{book_id}_cover.jpg"
+    with open(save_path,"wb") as file:
+        file.write(content)
+    return {"cover_url":f"/static/{save_path}"}
 
 

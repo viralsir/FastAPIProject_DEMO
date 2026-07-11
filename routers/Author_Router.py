@@ -9,6 +9,7 @@ from schemas.book_schema import AuthorResponse
 
 author_router = APIRouter(prefix="/author",tags=["Author"])
 
+# http://localhost:8000/author
 #create new author in the database using post method
 @author_router.post("/",response_model=AuthorResponse)
 async def new_author(author:dict, db:AsyncSession=Depends(get_db)):

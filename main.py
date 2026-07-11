@@ -1,5 +1,11 @@
+from urllib.request import Request
+
 from fastapi import FastAPI
 from pydantic import BaseModel
+from starlette.middleware.cors import CORSMiddleware
+from starlette.responses import JSONResponse
+
+from exception import BookNotFoundException
 from routers import Student_Router, Author_Router, Book_Router, User_Router
 
 app = FastAPI(title="first api")
@@ -9,6 +15,18 @@ app.include_router(Student_Router.router)
 app.include_router(Author_Router.author_router)
 app.include_router(Book_Router.bookrouter)
 app.include_router(User_Router.userRouter)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:4200"],   # dev React server; use real domain in production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+@app.exception_handler(BookNotFoundException)
+async def book_not_found_exception_handler(request: Request, exc: BookNotFoundException):
+    return JSONResponse(status_code=404,content={"error":{"message":f"Book  {exc.book_id} not found","code":"Not_found","Details":None}})
 
 # http://localhost:8000/
 # @app.get("/")
